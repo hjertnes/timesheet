@@ -1,0 +1,5 @@
+* A commandline utility for keeping track of working horus. 
+First real thing I wrote in Go.
+
+- Cmd: this sets up the command line interface
+- Runner: called by the Run functions in Cmd. Kind of like a command pattern interface. There is one function per command / sub command that actually does anything in the cmd interface.
