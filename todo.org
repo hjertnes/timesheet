@@ -1,0 +1,9 @@
+* Event repository
+** Interface
+** Implementation
+
+* https://github.com/olekukonko/tablewriter
+* https://gobyexample.com/environment-variables
+
+
+
