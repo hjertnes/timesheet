@@ -109,15 +109,6 @@ func Run(runner runner.IRunner) {
 			runner.Backup(args[0])
 		},
 	}
-	var importCmd = &cobra.Command{
-		Use:   "import [filename]",
-		Short: "import data",
-		Long:  "import data from my previous system",
-		Args:  cobra.ExactArgs(1),
-		Run: func(cmd *cobra.Command, args []string) {
-			runner.Import(args[0])
-		},
-	}
 	var restoreCmd = &cobra.Command{
 		Use:   "restore [filename]",
 		Short: "restore database from export",
@@ -156,7 +147,6 @@ func Run(runner runner.IRunner) {
 	rootCmd.AddCommand(deleteCmd)
 	rootCmd.AddCommand(setupCmd)
 	rootCmd.AddCommand(backupCmd)
-	rootCmd.AddCommand(importCmd)
 	rootCmd.AddCommand(restoreCmd)
 	summaryCmd.AddCommand(summaryDayCmd)
 	rootCmd.AddCommand(summaryCmd)

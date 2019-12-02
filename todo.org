@@ -1,9 +1,3 @@
-* Event repository
-** Interface
-** Implementation
-
-* https://github.com/olekukonko/tablewriter
-* https://gobyexample.com/environment-variables
-
-
-
+* TODO Use settings in generating summaries
+* Plan tests
+* Clean up

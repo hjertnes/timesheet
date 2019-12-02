@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	var database = database.OpenTest()
+	var database = database.Open()
 	var settingsRepository SettingsRepository.ISettingsRepository = SettingsRepository.NewSettingsRepository(database.Db)
 	var eventRepository EventRepository.IEventRepository = EventRepository.NewEventRepository(database.Db)
 	var r = runner.NewRunner(eventRepository, settingsRepository)

@@ -8,12 +8,9 @@ import (
 )
 
 type ISettingsRepository interface {
-	Exist(key string) (bool, error)
 	GetOne(key string) (*models.Setting, error)
 	GetAll() ([]models.Setting, error)
-	Add(key string, value string) error
-	Update(key string, value string) error
-	Delete(key string) error
+	AddOrUpdate(key string, value string) error
 	DeleteAll() error
 }
 
@@ -46,30 +43,19 @@ func (s *SettingsRepository) GetAll() ([]models.Setting, error) {
 	return settings, result.Error
 }
 
-func (s *SettingsRepository) Add(key string, value string) error {
-	var setting = &models.Setting{Key: key, Value: value}
-	var result = s.db.Create(&setting)
-	return result.Error
-}
-
-func (s *SettingsRepository) Update(key string, value string) error {
-	var setting, err = s.GetOne(key)
-	s.db.Model(&setting).UpdateColumn("value", value)
-	return err
-}
-
-func (s *SettingsRepository) Delete(key string) error {
+func (s *SettingsRepository) AddOrUpdate(key string, value string) error {
 	var exist, err = s.Exist(key)
 	utils.ErrorHandler(err)
 	if exist {
 		var setting, err = s.GetOne(key)
-		if err != nil {
-			return err
-		}
-		var result = s.db.Delete(&setting)
+		s.db.Model(&setting).UpdateColumn("value", value)
+		return err
+	} else {
+		var setting = &models.Setting{Key: key, Value: value}
+		var result = s.db.Create(&setting)
 		return result.Error
 	}
-	return nil
+
 }
 
 func (s *SettingsRepository) DeleteAll() error {

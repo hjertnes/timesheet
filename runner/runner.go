@@ -29,7 +29,6 @@ type IRunner interface {
 	Setup()
 	Backup(filename string)
 	Restore(filename string)
-	Import(filename string)
 	SummaryYear()
 	SummaryDay()
 }
@@ -46,6 +45,21 @@ func NewRunner(e EventRepository.IEventRepository, s SettingsRepository.ISetting
 	}
 }
 
+func (r *Runner) settingToInt(name string) int {
+	var err error
+	var setting *models.Setting
+	var result int
+	setting, err = r.settingsRepository.GetOne(name)
+	utils.ErrorHandler(err)
+	result, err = strconv.Atoi(setting.Value)
+	utils.ErrorHandler(err)
+	return result
+}
+
+func (r *Runner) getSettings() (int, int) {
+	return r.settingToInt("workday"), r.settingToInt("break")
+}
+
 func (r *Runner) SettingsList() {
 	var items, err = r.settingsRepository.GetAll()
 	if err != nil {
@@ -58,17 +72,12 @@ func (r *Runner) SettingsList() {
 	}
 	table.Render()
 }
+
 func (r *Runner) SettingsSet(key string, value string) {
-	var exist, err = r.settingsRepository.Exist(key)
+	var err = r.settingsRepository.AddOrUpdate(key, value)
 	utils.ErrorHandler(err)
-	if exist {
-		var err = r.settingsRepository.Update(key, value)
-		utils.ErrorHandler(err)
-	} else {
-		var err = r.settingsRepository.Add(key, value)
-		utils.ErrorHandler(err)
-	}
 }
+
 func (r *Runner) List() {
 	var items, err = r.eventRepository.GetAll()
 	utils.ErrorHandler(err)
@@ -80,24 +89,29 @@ func (r *Runner) List() {
 	table.Render()
 
 }
+
 func (r *Runner) Add(start time.Time, end time.Time, excluded bool) {
 	var err = r.eventRepository.Add(start, end, excluded, false)
 	utils.ErrorHandler(err)
 }
+
 func (r *Runner) Off(date time.Time) {
 	var err = r.eventRepository.Add(date, date, false, true)
 	utils.ErrorHandler(err)
 }
+
 func (r *Runner) Delete(id int) {
 	var err = r.eventRepository.Delete(id)
 	utils.ErrorHandler(err)
 }
+
 func read() string {
 	var reader = bufio.NewReader(os.Stdin)
 	var line, err = reader.ReadString('\n')
 	utils.ErrorHandler(err)
 	return line
 }
+
 func (r *Runner) Setup() {
 	fmt.Println("Setup")
 	fmt.Println("This will replace your current settings but not your data")
@@ -105,11 +119,10 @@ func (r *Runner) Setup() {
 	var workDayMinutes = read()
 	fmt.Print("Break in minutes: ")
 	var breakInMinutes = read()
-	r.settingsRepository.Delete("workday")
-	r.settingsRepository.Delete("break")
-	r.settingsRepository.Add("workday", strings.Trim(workDayMinutes, "\n"))
-	r.settingsRepository.Add("break", strings.Trim(breakInMinutes, "\n"))
+	r.settingsRepository.AddOrUpdate("workday", strings.Trim(workDayMinutes, "\n"))
+	r.settingsRepository.AddOrUpdate("break", strings.Trim(breakInMinutes, "\n"))
 }
+
 func (r *Runner) Backup(filename string) {
 	var allSettings, _ = r.settingsRepository.GetAll()
 	var allEvents, _ = r.eventRepository.GetAll()
@@ -127,9 +140,10 @@ func (r *Runner) Backup(filename string) {
 	}
 	file, _ := json.MarshalIndent(document, "", " ")
 
-	_ = ioutil.WriteFile(filename, file, 0644)
-
+	var err = ioutil.WriteFile(filename, file, 0644)
+	utils.ErrorHandler(err)
 }
+
 func (r *Runner) Restore(filename string) {
 	var obj backupmodels.Document
 	data, err := ioutil.ReadFile(filename)
@@ -139,88 +153,36 @@ func (r *Runner) Restore(filename string) {
 	r.eventRepository.DeleteAll()
 	r.settingsRepository.DeleteAll()
 	for _, e := range obj.Events {
-		r.eventRepository.Add(e.Start, e.End, e.Excluded, e.Off)
+		err = r.eventRepository.Add(e.Start, e.End, e.Excluded, e.Off)
+		utils.ErrorHandler(err)
 	}
 	for _, e := range obj.Settings {
-		r.settingsRepository.Add(e.Key, e.Value)
+		err = r.settingsRepository.AddOrUpdate(e.Key, e.Value)
+		utils.ErrorHandler(err)
 	}
 }
-func (r *Runner) Import(filename string) {
-	type Event struct {
-		Start    string
-		End      string
-		Excluded bool
-		Off      bool
-	}
-	type Document struct {
-		Events []Event
-	}
 
-	var obj Document
-	data, err := ioutil.ReadFile(filename)
-	utils.ErrorHandler(err)
-	err = json.Unmarshal(data, &obj)
-	utils.ErrorHandler(err)
-	for _, e := range obj.Events {
-		var start time.Time
-		var end time.Time
-		var err error
-		start, err = utils.TimeFromString(e.Start)
-		utils.ErrorHandler(err)
-		end, err = utils.TimeFromString(e.End)
-		utils.ErrorHandler(err)
-		r.eventRepository.Add(start, end, e.Excluded, e.Off)
-	}
-}
 func (r *Runner) SummaryYear() {
+	var workday, breaktime = r.getSettings()
 	var items, err = r.eventRepository.GetAll()
 	utils.ErrorHandler(err)
-
-	var years map[int]int = make(map[int]int)
-
-	for _, e := range items {
-		var year = e.Start.Year()
-		years[year] = year
-	}
+	var years = utils.BuildListOf("2006", items)
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Year", "Expected", "Total", "Difference"})
 	var data = make([][]string, 0)
 	for _, e := range years {
-		events := make([]models.Event, 0)
-		days := make(map[string]bool)
-		for _, i := range items {
-			if i.Start.Year() == e {
-				events = append(events, i)
-			}
-		}
-		for _, i := range events {
-			var day = i.Start.Format("2006-01-02")
-			if days[day] {
-				if days[day] == false {
-					days[day] = i.Excluded
-				}
-			} else {
-				days[day] = i.Excluded
-			}
-		}
-
-		var numberOfDays = 0
-		for _, i := range days {
-			if i == false {
-				numberOfDays++
-			}
-		}
-
-		var expected int = int(numberOfDays) * 425
-		var total int = 0
-
-		for _, i := range events {
-			var diff = i.End.Sub(i.Start)
-			total += int(diff.Minutes())
-		}
-		total = total - (numberOfDays * 30)
+		events := utils.FilterEventsFrom("2006", items, e)
+		var numberOfDays = utils.CountDaysNotExcluded(events)
+		var expected int = int(numberOfDays) * workday
+		var total int = utils.CalculateTotal(events)
+		total = total - (numberOfDays * breaktime)
 		var diff int = int(total) - expected
-		data = append(data, []string{strconv.Itoa(e), utils.IntOfMinutesToString(expected), utils.IntOfMinutesToString(total), utils.IntOfMinutesToString(diff)})
+		data = append(data, []string{
+			e,
+			utils.IntOfMinutesToString(expected),
+			utils.IntOfMinutesToString(total),
+			utils.IntOfMinutesToString(diff),
+		})
 	}
 	sort.SliceStable(data, func(i, j int) bool {
 		return data[i][0] < data[j][0]
@@ -231,36 +193,22 @@ func (r *Runner) SummaryYear() {
 	table.Render()
 
 }
-func (r *Runner) SummaryDay() {
 
+func (r *Runner) SummaryDay() {
+	var _, breaktime = r.getSettings()
 	var items, err = r.eventRepository.GetAll()
 	utils.ErrorHandler(err)
 
-	var days = make(map[string]string)
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Date", "Hours"})
 	var data = make([][]string, 0)
-	for _, i := range items {
-		days[i.Start.Format("2006-01-02")] = i.Start.Format("2006-01-02")
-	}
+	var days = utils.BuildListOf("2006-01-02", items)
 	for _, day := range days {
-		var excluded = false
-		var events []models.Event = make([]models.Event, 0)
-		for _, i := range items {
-			if i.Start.Format("2006-01-02") == day {
-				events = append(events, i)
-				if i.Excluded == true {
-					excluded = true
-				}
-			}
-		}
-		var total int = 0
-		for _, event := range events {
-			var diff = event.End.Sub(event.Start)
-			total = total + int(diff.Minutes())
-		}
+		var events = utils.FilterEventsFrom("2006-01-02", items, day)
+		var excluded = utils.IsDayExcluded(events)
+		var total = utils.CalculateTotal(events)
 		if excluded == false {
-			total = total - 30
+			total = total - breaktime
 		}
 		if total > 0 {
 			data = append(data, []string{day, utils.IntOfMinutesToString(total)})

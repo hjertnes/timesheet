@@ -4,6 +4,8 @@ go 1.13
 
 require (
 	github.com/jinzhu/gorm v1.9.11
+	github.com/mdempsky/gocode v0.0.0-20190203001940-7fb65232883f // indirect
 	github.com/olekukonko/tablewriter v0.0.3
 	github.com/spf13/cobra v0.0.5
+	golang.org/x/tools v0.0.0-20191130070609-6e064ea0cf2d // indirect
 )
