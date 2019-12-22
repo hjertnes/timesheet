@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 	"time"
 
@@ -31,8 +30,7 @@ func IntFromString(number string) (int, error) {
 
 func ErrorHandler(err error) {
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(0)
+		panic(err)
 	}
 }
 

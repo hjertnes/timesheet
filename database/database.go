@@ -32,3 +32,7 @@ func Open() *Database {
 func OpenTest() *Database {
 	return &Database{Db: openDatabase("./data.db")}
 }
+
+func OpenInMemory() *Database {
+	return &Database{Db: openDatabase(":memory:")}
+}

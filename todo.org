@@ -1,3 +1,5 @@
-* TODO Use settings in generating summaries
 * Plan tests
-* Clean up
+* TODO Test Coverage
+* TODO Move file IO to its own package and interface
+* TODO Figure out how to test the Read from stdio thing
+* TODO Re-write cmd.go for full test cov

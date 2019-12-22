@@ -25,9 +25,6 @@ func NewSettingsRepository(db *gorm.DB) *SettingsRepository {
 func (s *SettingsRepository) Exist(key string) (bool, error) {
 	var count int
 	var result = s.db.Model(&models.Setting{}).Where("key = ?", key).Count(&count)
-	if result.Error != nil {
-		return false, result.Error
-	}
 	return count == 1, result.Error
 }
 

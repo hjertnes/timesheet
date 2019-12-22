@@ -22,7 +22,7 @@ func NewEventRepository(db *gorm.DB) *EventRepository {
 }
 
 func (e *EventRepository) getOne(id int) (*models.Event, error) {
-	var event *models.Event
+	var event *models.Event = &models.Event{}
 	var result = e.db.Where("id = ?", id).First(&event)
 	return event, result.Error
 }
@@ -44,7 +44,7 @@ func (e *EventRepository) Delete(id int) error {
 	if err != nil {
 		return err
 	}
-	var result = e.db.Delete(&event)
+	var result = e.db.Delete(event)
 	return result.Error
 }
 

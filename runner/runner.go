@@ -1,7 +1,6 @@
 package runner
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/hjertnes/timesheet/backupmodels"
 	"github.com/hjertnes/timesheet/models"
+	"github.com/hjertnes/timesheet/read"
 	EventRepository "github.com/hjertnes/timesheet/repositories/event"
 	SettingsRepository "github.com/hjertnes/timesheet/repositories/settings"
 	"github.com/hjertnes/timesheet/utils"
@@ -36,12 +36,14 @@ type IRunner interface {
 type Runner struct {
 	eventRepository    EventRepository.IEventRepository
 	settingsRepository SettingsRepository.ISettingsRepository
+	reader             read.IRead
 }
 
-func NewRunner(e EventRepository.IEventRepository, s SettingsRepository.ISettingsRepository) IRunner {
+func NewRunner(e EventRepository.IEventRepository, s SettingsRepository.ISettingsRepository, r read.IRead) IRunner {
 	return &Runner{
 		eventRepository:    e,
 		settingsRepository: s,
+		reader:             r,
 	}
 }
 
@@ -62,9 +64,7 @@ func (r *Runner) getSettings() (int, int) {
 
 func (r *Runner) SettingsList() {
 	var items, err = r.settingsRepository.GetAll()
-	if err != nil {
-		utils.ErrorHandler(err)
-	}
+	utils.ErrorHandler(err)
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Key", "Value"})
 	for _, v := range items {
@@ -105,20 +105,13 @@ func (r *Runner) Delete(id int) {
 	utils.ErrorHandler(err)
 }
 
-func read() string {
-	var reader = bufio.NewReader(os.Stdin)
-	var line, err = reader.ReadString('\n')
-	utils.ErrorHandler(err)
-	return line
-}
-
 func (r *Runner) Setup() {
 	fmt.Println("Setup")
 	fmt.Println("This will replace your current settings but not your data")
 	fmt.Print("Work day in minutes: ")
-	var workDayMinutes = read()
+	var workDayMinutes = r.reader.Execute(os.Stdin)
 	fmt.Print("Break in minutes: ")
-	var breakInMinutes = read()
+	var breakInMinutes = r.reader.Execute(os.Stdin)
 	r.settingsRepository.AddOrUpdate("workday", strings.Trim(workDayMinutes, "\n"))
 	r.settingsRepository.AddOrUpdate("break", strings.Trim(breakInMinutes, "\n"))
 }
