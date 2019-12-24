@@ -7,15 +7,29 @@ import (
 	EventRepository "github.com/hjertnes/timesheet/repositories/event"
 	SettingsRepository "github.com/hjertnes/timesheet/repositories/settings"
 	"github.com/hjertnes/timesheet/runner"
+	"github.com/hjertnes/timesheet/utils"
 )
 
 func main() {
 	var database = database.Open()
-	var settingsRepository SettingsRepository.ISettingsRepository = SettingsRepository.NewSettingsRepository(database.Db)
-	var eventRepository EventRepository.IEventRepository = EventRepository.NewEventRepository(database.Db)
-	var read = read.Read{}
-	var r = runner.NewRunner(eventRepository, settingsRepository, read)
-	var rf = cmd.NewRunFunc(r)
+
+	var settingsRepository SettingsRepository.Repository = SettingsRepository.New(database.Db)
+
+	var eventRepository EventRepository.Repository = EventRepository.New(database.Db)
+
+	var rr = read.New()
+
+	var r = runner.New(eventRepository, settingsRepository, rr)
+
+	var rf = cmd.New(r)
+
 	cmd.Run(rf, r)
-	defer database.Db.Close()
+
+	var err error
+
+	defer func() {
+		err = database.Db.Close()
+	}()
+
+	utils.ErrorHandler(err)
 }

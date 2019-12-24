@@ -1,3 +1,4 @@
+// Package cmd sets up the command line interface
 package cmd
 
 import (
@@ -9,155 +10,238 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// RunFunc contains the runners used by Cobra
 type RunFunc struct {
-	r           runner.IRunner
+	r           runner.Runner
 	ExcludedOpt bool
 }
 
-func (r *RunFunc) SettingsList(cmd *cobra.Command, args []string) {
+func (r *RunFunc) settingsList(cmd *cobra.Command, args []string) {
 	r.r.SettingsList()
 }
-func (r *RunFunc) SettingsSet(cmd *cobra.Command, args []string) {
+func (r *RunFunc) settingsSet(cmd *cobra.Command, args []string) {
 	r.r.SettingsSet(args[0], args[1])
 }
-func (r *RunFunc) List(cmd *cobra.Command, args []string) {
+func (r *RunFunc) list(cmd *cobra.Command, args []string) {
 	r.r.List()
 }
-func (r *RunFunc) Off(cmd *cobra.Command, args []string) {
+func (r *RunFunc) off(cmd *cobra.Command, args []string) {
 	date, err := utils.TimeFromDateString(args[0])
 	utils.ErrorHandler(err)
 	r.r.Off(date)
 }
-func (r *RunFunc) SummaryDay(cmd *cobra.Command, args []string) {
+func (r *RunFunc) summaryDay(cmd *cobra.Command, args []string) {
 	r.r.SummaryDay()
 }
-func (r *RunFunc) SummaryYear(cmd *cobra.Command, args []string) {
+func (r *RunFunc) summaryYear(cmd *cobra.Command, args []string) {
 	r.r.SummaryYear()
 }
-func (r *RunFunc) Restore(cmd *cobra.Command, args []string) {
+func (r *RunFunc) restore(cmd *cobra.Command, args []string) {
 	r.r.Restore(args[0])
 }
-func (r *RunFunc) Backup(cmd *cobra.Command, args []string) {
+func (r *RunFunc) backup(cmd *cobra.Command, args []string) {
 	r.r.Backup(args[0])
 }
-func (r *RunFunc) Setup(cmd *cobra.Command, args []string) {
+func (r *RunFunc) setup(cmd *cobra.Command, args []string) {
 	r.r.Setup()
 }
-func (r *RunFunc) Delete(cmd *cobra.Command, args []string) {
+func (r *RunFunc) deleteOne(cmd *cobra.Command, args []string) {
 	var date, err = utils.IntFromString(args[0])
+
 	utils.ErrorHandler(err)
 	r.r.Delete(date)
 }
-func (r *RunFunc) Add(cmd *cobra.Command, args []string) {
+func (r *RunFunc) add(cmd *cobra.Command, args []string) {
 	var err error
+
 	var start time.Time
+
 	var end time.Time
 
-	start, err = utils.TimeFromDateStringAnTimeString(args[0], args[1])
+	start, err = utils.TimeFromDateStringAndTimeString(args[0], args[1])
 	utils.ErrorHandler(err)
 
-	end, err = utils.TimeFromDateStringAnTimeString(args[0], args[2])
+	end, err = utils.TimeFromDateStringAndTimeString(args[0], args[2])
 	utils.ErrorHandler(err)
 
 	r.r.Add(start, end, r.ExcludedOpt)
 }
-func NewRunFunc(run runner.IRunner) *RunFunc {
+
+// New constructor
+func New(run runner.Runner) *RunFunc {
 	return &RunFunc{r: run}
 }
 
-// Run test
-func Run(run *RunFunc, runner runner.IRunner) {
+type builder struct {
+	run *RunFunc
+}
 
-	//Commands
-	var rootCmd = &cobra.Command{
+func (b *builder) root() *cobra.Command {
+	return &cobra.Command{
 		Use:  "timesheet",
 		Long: "A command line utility to keep track of worked hours",
 	}
-	var settingsCmd = &cobra.Command{
+}
+
+func (b *builder) settings() *cobra.Command {
+	return &cobra.Command{
 		Use:   "setting [sub-command]",
 		Short: "settings",
 		Long:  "manage settings",
 	}
-	var settingsListCmd = &cobra.Command{
+}
+
+func (b *builder) settingsList() *cobra.Command {
+	return &cobra.Command{
 		Use:   "list",
 		Short: "list settings",
 		Long:  "command to list current settings",
 		Args:  cobra.ExactArgs(0),
-		Run:   run.SettingsList,
+		Run:   b.run.settingsList,
 	}
-	var settingsSetCmd = &cobra.Command{
+}
+
+func (b *builder) settingsSet() *cobra.Command {
+	return &cobra.Command{
 		Use:   "set [key] [value]",
 		Short: "set or update settings",
 		Long:  "command to add or update settings",
 		Args:  cobra.ExactArgs(2),
-		Run:   run.SettingsSet,
+		Run:   b.run.settingsSet,
 	}
-	var listCmd = &cobra.Command{
+}
+
+func (b *builder) list() *cobra.Command {
+	return &cobra.Command{
 		Use:   "list",
 		Short: "lists events",
 		Long:  "lists all events in the database",
 		Args:  cobra.ExactArgs(0),
-		Run:   run.List,
+		Run:   b.run.list,
 	}
-	var offCmd = &cobra.Command{
-		Use:   "off [date]",
-		Short: "add day off",
-		Long:  "Logs [date] as a day off, effiently deducting a day of working hours",
-		Args:  cobra.ExactArgs(1),
-		Run:   run.Off,
-	}
-	//remember excluded flag
-	var addCmd = &cobra.Command{
+}
+
+func (b *builder) add() *cobra.Command {
+	return &cobra.Command{
 		Use:   "add [date] [from] [to]",
 		Short: "add event",
-		Long:  "logs work on a given date between two timestamps, deducts break for each date unless --exlcuded is used. Formats: yyyy-mm-dd, hh:mm",
-		Args:  cobra.ExactArgs(3),
-		Run:   run.Add,
+		Long: `logs work on a given date between two timestamps, 
+deducts break for each date unless --excluded is used. Formats: yyyy-mm-dd, hh:mm`,
+		Args: cobra.ExactArgs(3),
+		Run:  b.run.add,
 	}
-	var deleteCmd = &cobra.Command{
+}
+func (b *builder) delete() *cobra.Command {
+	return &cobra.Command{
 		Use:   "delete [id]",
 		Short: "delete event",
 		Long:  "remove event from database",
 		Args:  cobra.ExactArgs(1),
-		Run:   run.Delete,
+		Run:   b.run.deleteOne,
 	}
-	var setupCmd = &cobra.Command{
+}
+
+func (b *builder) off() *cobra.Command {
+	return &cobra.Command{
+		Use:   "off [date]",
+		Short: "add day off",
+		Long:  "Logs [date] as a day off, effiently deducting a day of working hours",
+		Args:  cobra.ExactArgs(1),
+		Run:   b.run.off,
+	}
+}
+
+func (b *builder) setup() *cobra.Command {
+	return &cobra.Command{
 		Use:   "setup",
 		Short: "set timesheet up",
 		Long:  "configure required settings. It will replace existing settings but not other data",
 		Args:  cobra.ExactArgs(0),
-		Run:   run.Setup,
+		Run:   b.run.setup,
 	}
-	var backupCmd = &cobra.Command{
+}
+
+func (b *builder) backup() *cobra.Command {
+	return &cobra.Command{
 		Use:   "backup [filename]",
 		Short: "backup database to filename",
 		Long:  "will write a json export of the database to filename",
 		Args:  cobra.ExactArgs(1),
-		Run:   run.Backup,
+		Run:   b.run.backup,
 	}
-	var restoreCmd = &cobra.Command{
+}
+
+func (b *builder) restore() *cobra.Command {
+	return &cobra.Command{
 		Use:   "restore [filename]",
 		Short: "restore database from export",
 		Long:  "restores (and replaces) data in database from a previous export",
 		Args:  cobra.ExactArgs(1),
-		Run:   run.Restore,
+		Run:   b.run.restore,
 	}
-	//day option
-	var summaryCmd = &cobra.Command{
+}
+
+func (b *builder) summaryYear() *cobra.Command {
+	return &cobra.Command{
 		Use:   "summary",
 		Short: "show summary",
 		Long:  "show a summary per year of how many hours are logged versus how many are expected",
 		Args:  cobra.ExactArgs(0),
-		Run:   run.SummaryDay,
+		Run:   b.run.summaryDay,
 	}
-	var summaryDayCmd = &cobra.Command{
+}
+
+func (b *builder) summaryDay() *cobra.Command {
+	return &cobra.Command{
 		Use:   "day",
 		Short: "show hours logged per day",
-		Long:  "shows a list of dates and how many hours and minutes I worked in a format that makes it easy to copy paste into our time tracking stuff at work",
-		Args:  cobra.ExactArgs(0),
-		Run:   run.SummaryYear,
+		Long: `shows a list of dates and how many hours and minutes I worked 
+in a format that makes it easy to copy paste into our time tracking stuff at work`,
+		Args: cobra.ExactArgs(0),
+		Run:  b.run.summaryYear,
 	}
-	addCmd.Flags().BoolVarP(&run.ExcludedOpt, "excluded", "e", false, "will cause the days you use it on to not have break time deducted(e.g working extra hours during the weekend)")
+}
+
+// Run builds and runs command
+func Run(run *RunFunc, runner runner.Runner) {
+	var b = &builder{
+		run: run,
+	}
+	//Commands
+	var rootCmd = b.root()
+
+	var settingsCmd = b.settings()
+
+	var settingsListCmd = b.settingsList()
+
+	var settingsSetCmd = b.settingsSet()
+
+	var listCmd = b.list()
+
+	var offCmd = b.off()
+
+	var addCmd = b.add()
+
+	var deleteCmd = b.delete()
+
+	var setupCmd = b.setup()
+
+	var backupCmd = b.backup()
+
+	var restoreCmd = b.restore()
+
+	var summaryCmd = b.summaryYear()
+
+	var summaryDayCmd = b.summaryDay()
+
+	addCmd.Flags().BoolVarP(
+		&run.ExcludedOpt,
+		"excluded",
+		"e",
+		false,
+		"will cause the days you use it on to not have break time deducted(e.g working extra hours during the weekend)",
+	)
+
 	settingsCmd.AddCommand(settingsListCmd)
 	settingsCmd.AddCommand(settingsSetCmd)
 	rootCmd.AddCommand(settingsCmd)
@@ -170,5 +254,5 @@ func Run(run *RunFunc, runner runner.IRunner) {
 	rootCmd.AddCommand(restoreCmd)
 	summaryCmd.AddCommand(summaryDayCmd)
 	rootCmd.AddCommand(summaryCmd)
-	rootCmd.Execute()
+	_ = rootCmd.Execute()
 }

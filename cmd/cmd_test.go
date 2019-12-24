@@ -1,9 +1,10 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"testing"
 	"time"
+
+	"github.com/spf13/cobra"
 
 	"github.com/stretchr/testify/mock"
 )
@@ -48,94 +49,129 @@ func (m *RunnerMock) SummaryDay() {
 
 func TestRun(t *testing.T) {
 	var m = &RunnerMock{}
-	var r = NewRunFunc(m)
+
+	var r = New(m)
+
 	Run(r, m)
 }
 
 func TestRunFuncList(t *testing.T) {
 	var m = &RunnerMock{}
-	var r = NewRunFunc(m)
+
+	var r = New(m)
+
 	var cmd = &cobra.Command{}
+
 	m.On("List").Return()
-	r.List(cmd, []string{})
+	r.list(cmd, []string{})
 }
 
 func TestRunFuncOff(t *testing.T) {
 	var m = &RunnerMock{}
-	var r = NewRunFunc(m)
+
+	var r = New(m)
+
 	var cmd = &cobra.Command{}
+
 	m.On("Off", mock.Anything).Return()
-	r.Off(cmd, []string{"2010-01-01"})
+	r.off(cmd, []string{"2010-01-01"})
 }
 
 func TestRunFuncAdd(t *testing.T) {
 	var m = &RunnerMock{}
-	var r = NewRunFunc(m)
+
+	var r = New(m)
+
 	var cmd = &cobra.Command{}
+
 	m.On("Add", mock.Anything, mock.Anything, mock.Anything).Return()
-	r.Add(cmd, []string{"2010-01-01", "08:00", "16:00"})
+	r.add(cmd, []string{"2010-01-01", "08:00", "16:00"})
 }
 
 func TestRunFuncBackup(t *testing.T) {
 	var m = &RunnerMock{}
-	var r = NewRunFunc(m)
+
+	var r = New(m)
+
 	var cmd = &cobra.Command{}
+
 	m.On("Backup", "filename").Return()
-	r.Backup(cmd, []string{"filename"})
+	r.backup(cmd, []string{"filename"})
 }
 
 func TestRunFuncRestore(t *testing.T) {
 	var m = &RunnerMock{}
-	var r = NewRunFunc(m)
+
+	var r = New(m)
+
 	var cmd = &cobra.Command{}
+
 	m.On("Restore", "filename").Return()
-	r.Restore(cmd, []string{"filename"})
+	r.restore(cmd, []string{"filename"})
 }
 
 func TestRunFuncDelete(t *testing.T) {
 	var m = &RunnerMock{}
-	var r = NewRunFunc(m)
+
+	var r = New(m)
+
 	var cmd = &cobra.Command{}
+
 	m.On("Delete", 1).Return()
-	r.Delete(cmd, []string{"1"})
+	r.deleteOne(cmd, []string{"1"})
 }
 
 func TestRunFuncSettingsList(t *testing.T) {
 	var m = &RunnerMock{}
-	var r = NewRunFunc(m)
+
+	var r = New(m)
+
 	var cmd = &cobra.Command{}
+
 	m.On("SettingsList").Return()
-	r.SettingsList(cmd, []string{})
+	r.settingsList(cmd, []string{})
 }
 
 func TestRunFuncSettingsSet(t *testing.T) {
 	var m = &RunnerMock{}
-	var r = NewRunFunc(m)
+
+	var r = New(m)
+
 	var cmd = &cobra.Command{}
+
 	m.On("SettingsSet", "A", "B").Return()
-	r.SettingsSet(cmd, []string{"A", "B"})
+	r.settingsSet(cmd, []string{"A", "B"})
 }
 
 func TestRunFuncSettingsSetup(t *testing.T) {
 	var m = &RunnerMock{}
-	var r = NewRunFunc(m)
+
+	var r = New(m)
+
 	var cmd = &cobra.Command{}
+
 	m.On("Setup").Return()
-	r.Setup(cmd, []string{})
+	r.setup(cmd, []string{})
 }
 
 func TestRunFuncSummaryYear(t *testing.T) {
 	var m = &RunnerMock{}
-	var r = NewRunFunc(m)
+
+	var r = New(m)
+
 	var cmd = &cobra.Command{}
+
 	m.On("SummaryYear").Return()
-	r.SummaryYear(cmd, []string{})
+	r.summaryYear(cmd, []string{})
 }
 
 func TestRunFuncSummaryDay(t *testing.T) {
 	var m = &RunnerMock{}
-	var r = NewRunFunc(m)
+
+	var r = New(m)
+
 	var cmd = &cobra.Command{}
+
 	m.On("SummaryDay").Return()
-	r.SummaryDay(cmd, []string{})
+	r.summaryDay(cmd, []string{})
 }

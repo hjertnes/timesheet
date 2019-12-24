@@ -1,16 +1,26 @@
 package read
 
 import (
+	"github.com/hjertnes/timesheet/utils"
+
 	"os"
 	"testing"
 )
 
 func Test(t *testing.T) {
-	var r = &Read{}
+	var r = &read{}
+
 	var f, _ = os.Create("./test")
-	f.WriteString("Test\n")
-	f.Close()
+
+	var _, err = f.WriteString("Test\n")
+
+	utils.ErrorHandler(err)
+
+	_ = f.Close()
+
 	f, _ = os.Open("./test")
-	r.Execute(f)
-	os.Remove("./test")
+
+	_ = r.Execute(f)
+
+	_ = os.Remove("./test")
 }

@@ -1,3 +1,4 @@
+// Package read from *os.File
 package read
 
 import (
@@ -7,16 +8,25 @@ import (
 	"github.com/hjertnes/timesheet/utils"
 )
 
-type IRead interface {
+// Read Interface for reading files usually stdin
+type Read interface {
 	Execute(f *os.File) string
 }
 
-type Read struct{}
+type read struct{}
 
-//os.Stdin
-func (r Read) Execute(f *os.File) string {
+// New constructor
+func New() Read {
+	return &read{}
+}
+
+//Execute read os.File
+func (r read) Execute(f *os.File) string {
 	var reader = bufio.NewReader(f)
+
 	var line, err = reader.ReadString('\n')
+
 	utils.ErrorHandler(err)
+
 	return line
 }

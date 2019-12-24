@@ -1,61 +1,84 @@
+// Package settings repository for settings
 package settings
 
 import (
 	"github.com/hjertnes/timesheet/models"
 	"github.com/hjertnes/timesheet/utils"
+
 	"github.com/jinzhu/gorm"
+	//Sqlite driver
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
-type ISettingsRepository interface {
+// Repository Interface for the repo
+type Repository interface {
 	GetOne(key string) (*models.Setting, error)
 	GetAll() ([]models.Setting, error)
 	AddOrUpdate(key string, value string) error
 	DeleteAll() error
+	Exist(key string) (bool, error)
 }
 
-type SettingsRepository struct {
+// SettingsRepository struct for the repo
+type repository struct {
 	db *gorm.DB
 }
 
-func NewSettingsRepository(db *gorm.DB) *SettingsRepository {
-	return &SettingsRepository{db: db}
+// New constructor
+func New(db *gorm.DB) Repository {
+	return &repository{db: db}
 }
 
-func (s *SettingsRepository) Exist(key string) (bool, error) {
+// Exist check if a key exist
+func (s *repository) Exist(key string) (bool, error) {
 	var count int
+
 	var result = s.db.Model(&models.Setting{}).Where("key = ?", key).Count(&count)
+
 	return count == 1, result.Error
 }
 
-func (s *SettingsRepository) GetOne(key string) (*models.Setting, error) {
+// GetOne get one setting matching item
+func (s *repository) GetOne(key string) (*models.Setting, error) {
 	var setting models.Setting
+
 	var result = s.db.Where("key = ?", key).First(&setting)
+
 	return &setting, result.Error
 }
 
-func (s *SettingsRepository) GetAll() ([]models.Setting, error) {
+// GetAll get all settings
+func (s *repository) GetAll() ([]models.Setting, error) {
 	var settings []models.Setting
+
 	var result = s.db.Find(&settings)
+
 	return settings, result.Error
 }
 
-func (s *SettingsRepository) AddOrUpdate(key string, value string) error {
+// AddOrUpdate creates setting if it doesnt exist or updates if it does
+func (s *repository) AddOrUpdate(key string, value string) error {
 	var exist, err = s.Exist(key)
+
 	utils.ErrorHandler(err)
+
 	if exist {
 		var setting, err = s.GetOne(key)
+
 		s.db.Model(&setting).UpdateColumn("value", value)
+
 		return err
-	} else {
-		var setting = &models.Setting{Key: key, Value: value}
-		var result = s.db.Create(&setting)
-		return result.Error
 	}
 
+	var setting = &models.Setting{Key: key, Value: value}
+
+	var result = s.db.Create(&setting)
+
+	return result.Error
 }
 
-func (s *SettingsRepository) DeleteAll() error {
+//DeleteAll deletes all settings
+func (s *repository) DeleteAll() error {
 	var result = s.db.Delete(&models.Setting{})
 	return result.Error
 }

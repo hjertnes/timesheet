@@ -36,6 +36,11 @@ func (m *SettingsRepositoryMock) AddOrUpdate(key string, value string) error {
 	return args.Error(0)
 }
 
+func (m *SettingsRepositoryMock) Exist(key string) (bool, error) {
+	args := m.Called(key)
+	return args.Bool(0), args.Error(1)
+}
+
 type EventRepositoryMock struct {
 	mock.Mock
 }
@@ -69,11 +74,15 @@ func (m *ReadMock) Execute(f *os.File) string {
 	return args.String(0)
 }
 
-func NewRunnerWithMocks() (*SettingsRepositoryMock, *EventRepositoryMock, *ReadMock, IRunner) {
+func NewRunnerWithMocks() (*SettingsRepositoryMock, *EventRepositoryMock, *ReadMock, Runner) {
 	var s = &SettingsRepositoryMock{}
+
 	var e = &EventRepositoryMock{}
+
 	var rm = &ReadMock{}
-	var r = NewRunner(e, s, rm)
+
+	var r = New(e, s, rm)
+
 	return s, e, rm, r
 }
 func TestSettingsSet(t *testing.T) {
@@ -102,7 +111,7 @@ func TestSettingsList(t *testing.T) {
 	})
 	t.Run("One", func(t *testing.T) {
 		var s, _, _, runner = NewRunnerWithMocks()
-		s.On("GetAll").Return([]models.Setting{models.Setting{Key: "A", Value: "B"}}, nil)
+		s.On("GetAll").Return([]models.Setting{{Key: "A", Value: "B"}}, nil)
 		runner.SettingsList()
 		s.AssertExpectations(t)
 		s.AssertNumberOfCalls(t, "GetAll", 1)
@@ -110,8 +119,8 @@ func TestSettingsList(t *testing.T) {
 	t.Run("Two", func(t *testing.T) {
 		var s, _, _, runner = NewRunnerWithMocks()
 		s.On("GetAll").Return([]models.Setting{
-			models.Setting{Key: "A", Value: "B"},
-			models.Setting{Key: "B", Value: "C"},
+			{Key: "A", Value: "B"},
+			{Key: "B", Value: "C"},
 		}, nil)
 		runner.SettingsList()
 		s.AssertExpectations(t)
@@ -128,8 +137,8 @@ func TestSettingsList(t *testing.T) {
 
 func TestAdd(t *testing.T) {
 	t.Run("Empty", func(t *testing.T) {
-		var start, _ = utils.TimeFromDateStringAnTimeString("2010-01-01", "08:00")
-		var end, _ = utils.TimeFromDateStringAnTimeString("2010-01-01", "16:00")
+		var start, _ = utils.TimeFromDateStringAndTimeString("2010-01-01", "08:00")
+		var end, _ = utils.TimeFromDateStringAndTimeString("2010-01-01", "16:00")
 		var _, e, _, runner = NewRunnerWithMocks()
 		e.On("Add", start, end, false, false).Return(nil)
 		runner.Add(start, end, false)
@@ -140,11 +149,11 @@ func TestAdd(t *testing.T) {
 
 func TestList(t *testing.T) {
 	t.Run("Empty", func(t *testing.T) {
-		var start, _ = utils.TimeFromDateStringAnTimeString("2010-01-01", "08:00")
-		var end, _ = utils.TimeFromDateStringAnTimeString("2010-01-01", "16:00")
+		var start, _ = utils.TimeFromDateStringAndTimeString("2010-01-01", "08:00")
+		var end, _ = utils.TimeFromDateStringAndTimeString("2010-01-01", "16:00")
 		var _, e, _, runner = NewRunnerWithMocks()
 		e.On("GetAll").Return([]models.Event{
-			models.Event{
+			{
 				Start:    start,
 				End:      end,
 				Excluded: false,
@@ -159,7 +168,7 @@ func TestList(t *testing.T) {
 
 func TestOff(t *testing.T) {
 	t.Run("Empty", func(t *testing.T) {
-		var start, _ = utils.TimeFromDateStringAnTimeString("2010-01-01", "00:00")
+		var start, _ = utils.TimeFromDateStringAndTimeString("2010-01-01", "00:00")
 		var _, e, _, runner = NewRunnerWithMocks()
 		e.On("Add", start, start, false, true).Return(nil)
 		runner.Off(start)
@@ -170,17 +179,17 @@ func TestOff(t *testing.T) {
 
 func TestBackup(t *testing.T) {
 	t.Run("Empty", func(t *testing.T) {
-		var start, _ = utils.TimeFromDateStringAnTimeString("2010-01-01", "08:00")
-		var end, _ = utils.TimeFromDateStringAnTimeString("2010-01-01", "16:00")
+		var start, _ = utils.TimeFromDateStringAndTimeString("2010-01-01", "08:00")
+		var end, _ = utils.TimeFromDateStringAndTimeString("2010-01-01", "16:00")
 		var s, e, _, runner = NewRunnerWithMocks()
 		s.On("GetAll").Return([]models.Setting{
-			models.Setting{
+			{
 				Key:   "A",
 				Value: "B",
 			},
 		}, nil)
 		e.On("GetAll").Return([]models.Event{
-			models.Event{
+			{
 				Start:    start,
 				End:      end,
 				Excluded: false,
@@ -229,40 +238,25 @@ func TestSetup(t *testing.T) {
 		s.AssertNumberOfCalls(t, "AddOrUpdate", 2)
 	})
 }
+func getEvent(date string) models.Event {
+	var start, _ = utils.TimeFromDateStringAndTimeString(date, "08:00")
+
+	var end, _ = utils.TimeFromDateStringAndTimeString(date, "16:00")
+
+	return models.Event{
+		Start:    start,
+		End:      end,
+		Excluded: false,
+		Off:      false,
+	}
+}
+
 func getSomeEvents() []models.Event {
-	var start1, _ = utils.TimeFromDateStringAnTimeString("2010-01-01", "08:00")
-	var end1, _ = utils.TimeFromDateStringAnTimeString("2010-01-01", "16:00")
-	var start2, _ = utils.TimeFromDateStringAnTimeString("2010-01-01", "17:00")
-	var end2, _ = utils.TimeFromDateStringAnTimeString("2010-01-01", "18:00")
-	var start3, _ = utils.TimeFromDateStringAnTimeString("2010-01-02", "08:00")
-	var end3, _ = utils.TimeFromDateStringAnTimeString("2010-01-02", "16:00")
-	var start4, _ = utils.TimeFromDateStringAnTimeString("2011-01-02", "17:00")
-	var end4, _ = utils.TimeFromDateStringAnTimeString("2011-01-02", "18:00")
 	return []models.Event{
-		models.Event{
-			Start:    start1,
-			End:      end1,
-			Excluded: false,
-			Off:      false,
-		},
-		models.Event{
-			Start:    start2,
-			End:      end2,
-			Excluded: false,
-			Off:      false,
-		},
-		models.Event{
-			Start:    start3,
-			End:      end3,
-			Excluded: false,
-			Off:      false,
-		},
-		models.Event{
-			Start:    start4,
-			End:      end4,
-			Excluded: false,
-			Off:      false,
-		},
+		getEvent("2010-01-01"),
+		getEvent("2010-01-01"),
+		getEvent("2010-01-02"),
+		getEvent("2011-01-01"),
 	}
 }
 
