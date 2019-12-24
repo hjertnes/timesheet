@@ -77,6 +77,8 @@ github.com/mattn/go-runewidth v0.0.6 h1:V2iyH+aX9C5fsYCpK60U8BYIvmhqxuOL3JZcqc1N
 github.com/mattn/go-runewidth v0.0.6/go.mod h1:H031xJmbD/WCDINGzjvQ9THkh0rPKHF+m2gUSrubnMI=
 github.com/mattn/go-sqlite3 v1.11.0 h1:LDdKkqtYlom37fkvqs8rMPFKAMe8+SgjbwZ6ex1/A/Q=
 github.com/mattn/go-sqlite3 v1.11.0/go.mod h1:FPy6KqzDD04eiIsT53CuJW3U88zkxoIYsOqkbpncsNc=
+github.com/mattn/goveralls v0.0.4 h1:/mdWfiU2y8kZ48EtgByYev/XT3W4dkTuKLOJJsh/r+o=
+github.com/mattn/goveralls v0.0.4/go.mod h1:8d1ZMHsd7fW6IRPKQh46F2WRpyib5/X4FOpevwGNQEw=
 github.com/matttproud/golang_protobuf_extensions v1.0.1/go.mod h1:D8He9yQNgCq6Z5Ld7szi9bcBfOoFv/3dc6xSMkL2PC0=
 github.com/mdempsky/gocode v0.0.0-20190203001940-7fb65232883f h1:ee+twVCignaZjt7jpbMSLxAeTN/Nfq9W/nm91E7QO1A=
 github.com/mdempsky/gocode v0.0.0-20190203001940-7fb65232883f/go.mod h1:hltEC42XzfMNgg0S1v6JTywwra2Mu6F6cLR03debVQ8=
@@ -180,6 +182,8 @@ golang.org/x/tools v0.0.0-20191130070609-6e064ea0cf2d h1:/iIZNFGxc/a7C3yWjGcnboV
 golang.org/x/tools v0.0.0-20191130070609-6e064ea0cf2d/go.mod h1:b+2E5dAYhXwXZwtnZ6UAqBI28+e2cm9otk0dWdXHAEo=
 golang.org/x/tools v0.0.0-20191220234730-f13409bbebaf h1:K7C8vSrr0PeD/cgNkkjpByDFJqzjr2YDmm3VPRjGfJM=
 golang.org/x/tools v0.0.0-20191220234730-f13409bbebaf/go.mod h1:TB2adYChydJhpapKDTa4BR/hXlZSLoq2Wpct/0txZ28=
+golang.org/x/tools v0.0.0-20191224055732-dd894d0a8a40 h1:UyP2XDSgSc8ldYCxAK735zQxeH3Gd81sK7Iy7AoaVxk=
+golang.org/x/tools v0.0.0-20191224055732-dd894d0a8a40/go.mod h1:TB2adYChydJhpapKDTa4BR/hXlZSLoq2Wpct/0txZ28=
 golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 google.golang.org/api v0.3.1/go.mod h1:6wY9I6uQWHQ8EM57III9mq/AjF+i8G65rmVagqKMtkk=
