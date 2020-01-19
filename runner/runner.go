@@ -106,7 +106,7 @@ func (r *runner) List() {
 
 	for _, v := range items {
 		table.Append([]string{
-			strconv.FormatUint(v.ID, 2),
+			strconv.FormatUint(v.ID, 10),
 			v.Start.String(),
 			v.End.String(),
 			strconv.FormatBool(v.Off),
