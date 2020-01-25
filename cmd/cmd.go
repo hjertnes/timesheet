@@ -187,7 +187,7 @@ func (b *builder) summaryYear() *cobra.Command {
 		Short: "show summary",
 		Long:  "show a summary per year of how many hours are logged versus how many are expected",
 		Args:  cobra.ExactArgs(0),
-		Run:   b.run.summaryDay,
+		Run:   b.run.summaryYear,
 	}
 }
 
@@ -198,7 +198,7 @@ func (b *builder) summaryDay() *cobra.Command {
 		Long: `shows a list of dates and how many hours and minutes I worked 
 in a format that makes it easy to copy paste into our time tracking stuff at work`,
 		Args: cobra.ExactArgs(0),
-		Run:  b.run.summaryYear,
+		Run:  b.run.summaryDay,
 	}
 }
 
