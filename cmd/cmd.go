@@ -36,21 +36,10 @@ func (r *RunFunc) summaryDay(cmd *cobra.Command, args []string) {
 func (r *RunFunc) summaryYear(cmd *cobra.Command, args []string) {
 	r.r.SummaryYear()
 }
-func (r *RunFunc) restore(cmd *cobra.Command, args []string) {
-	r.r.Restore(args[0])
-}
-func (r *RunFunc) backup(cmd *cobra.Command, args []string) {
-	r.r.Backup(args[0])
-}
 func (r *RunFunc) setup(cmd *cobra.Command, args []string) {
 	r.r.Setup()
 }
-func (r *RunFunc) deleteOne(cmd *cobra.Command, args []string) {
-	var date, err = utils.IntFromString(args[0])
 
-	utils.ErrorHandler(err)
-	r.r.Delete(date)
-}
 func (r *RunFunc) add(cmd *cobra.Command, args []string) {
 	var err error
 
@@ -131,15 +120,6 @@ deducts break for each date unless --excluded is used. Formats: yyyy-mm-dd, hh:m
 		Run:  b.run.add,
 	}
 }
-func (b *builder) delete() *cobra.Command {
-	return &cobra.Command{
-		Use:   "delete [id]",
-		Short: "delete event",
-		Long:  "remove event from database",
-		Args:  cobra.ExactArgs(1),
-		Run:   b.run.deleteOne,
-	}
-}
 
 func (b *builder) off() *cobra.Command {
 	return &cobra.Command{
@@ -158,26 +138,6 @@ func (b *builder) setup() *cobra.Command {
 		Long:  "configure required settings. It will replace existing settings but not other data",
 		Args:  cobra.ExactArgs(0),
 		Run:   b.run.setup,
-	}
-}
-
-func (b *builder) backup() *cobra.Command {
-	return &cobra.Command{
-		Use:   "backup [filename]",
-		Short: "backup database to filename",
-		Long:  "will write a json export of the database to filename",
-		Args:  cobra.ExactArgs(1),
-		Run:   b.run.backup,
-	}
-}
-
-func (b *builder) restore() *cobra.Command {
-	return &cobra.Command{
-		Use:   "restore [filename]",
-		Short: "restore database from export",
-		Long:  "restores (and replaces) data in database from a previous export",
-		Args:  cobra.ExactArgs(1),
-		Run:   b.run.restore,
 	}
 }
 
@@ -222,13 +182,7 @@ func Run(run *RunFunc, runner runner.Runner) {
 
 	var addCmd = b.add()
 
-	var deleteCmd = b.delete()
-
 	var setupCmd = b.setup()
-
-	var backupCmd = b.backup()
-
-	var restoreCmd = b.restore()
 
 	var summaryCmd = b.summaryYear()
 
@@ -248,10 +202,7 @@ func Run(run *RunFunc, runner runner.Runner) {
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(offCmd)
 	rootCmd.AddCommand(addCmd)
-	rootCmd.AddCommand(deleteCmd)
 	rootCmd.AddCommand(setupCmd)
-	rootCmd.AddCommand(backupCmd)
-	rootCmd.AddCommand(restoreCmd)
 	summaryCmd.AddCommand(summaryDayCmd)
 	rootCmd.AddCommand(summaryCmd)
 	_ = rootCmd.Execute()

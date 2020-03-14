@@ -1,35 +1,31 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/hjertnes/timesheet/cmd"
-	"github.com/hjertnes/timesheet/database"
+	"github.com/hjertnes/timesheet/models"
 	"github.com/hjertnes/timesheet/read"
-	EventRepository "github.com/hjertnes/timesheet/repositories/event"
-	SettingsRepository "github.com/hjertnes/timesheet/repositories/settings"
 	"github.com/hjertnes/timesheet/runner"
 	"github.com/hjertnes/timesheet/utils"
 )
 
 func main() {
-	var database = database.Open()
+	var home = os.Getenv("HOME")
 
-	var settingsRepository SettingsRepository.Repository = SettingsRepository.New(database.Db)
-
-	var eventRepository EventRepository.Repository = EventRepository.New(database.Db)
+	repo := models.New(fmt.Sprintf("%s/txt/timesheet.yaml", home))
+	d, err := repo.Load()
+	utils.ErrorHandler(err)
 
 	var rr = read.New()
 
-	var r = runner.New(eventRepository, settingsRepository, rr)
+	var r = runner.New(d, rr)
 
 	var rf = cmd.New(r)
 
 	cmd.Run(rf, r)
 
-	var err error
-
-	defer func() {
-		err = database.Db.Close()
-	}()
-
+	err = repo.Save(d)
 	utils.ErrorHandler(err)
 }

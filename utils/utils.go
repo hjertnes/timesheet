@@ -3,10 +3,10 @@ package utils
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"strconv"
 	"time"
-
-	"github.com/hjertnes/timesheet/models"
 )
 
 func timeFromString(datestr string) (time.Time, error) {
@@ -21,6 +21,11 @@ func TimeFromDateString(datestr string) (time.Time, error) {
 // TimeFromDateStringAndTimeString turns a date string and a time string into time.Time
 func TimeFromDateStringAndTimeString(datestr string, timestr string) (time.Time, error) {
 	return timeFromString(fmt.Sprintf("%sT%s:00Z", datestr, timestr))
+}
+
+// TimeFromDateStringAndTimeString2 turns a date string and a time string into time.Time
+func TimeFromDateStringAndTimeString2(datestr string, timestr string) (time.Time, error) {
+	return timeFromString(fmt.Sprintf("%sT%sZ", datestr, timestr))
 }
 
 // TimeFromString turns a RFC3339 into time.Time
@@ -59,69 +64,27 @@ func IntOfMinutesToString(minutes int) string {
 	return fmt.Sprintf("%sh %sm", strconv.Itoa(h), strconv.Itoa(m))
 }
 
-// BuildListOf builds map of unique based on time.Time format
-func BuildListOf(format string, items []models.Event) map[string]string {
-	var years = make(map[string]string)
-
-	for _, e := range items {
-		var year = e.Start.Format(format)
-		years[year] = year
-	}
-
-	return years
-}
-
-// FilterEventsFrom return all items that match format with string
-func FilterEventsFrom(format string, items []models.Event, year string) []models.Event {
-	events := make([]models.Event, 0)
-
-	for _, i := range items {
-		if i.Start.Format(format) == year {
-			events = append(events, i)
+func exist(filename string) bool {
+	if _, err := os.Stat(filename); err != nil {
+		if os.IsNotExist(err) {
+			return false
 		}
 	}
-
-	return events
+	return true
 }
 
-// CountDaysNotExcluded count elements not excluded
-func CountDaysNotExcluded(items []models.Event) int {
-	var numberOfDays = 0
-
-	var days = BuildListOf("2006-01-02", items)
-
-	for _, day := range days {
-		var dayEvents = FilterEventsFrom("2006-01-02", items, day)
-
-		if !IsDayExcluded(dayEvents) {
-			numberOfDays++
+// OpenOrCreate opens the file, and creates it first if it doesn't exist
+func OpenOrCreate(filename string) (io.ReadWriteCloser, error) {
+	e := exist(filename)
+	if !e {
+		f, err := os.Create(filename)
+		if err != nil {
+			return nil, err
+		}
+		err = f.Close()
+		if err != nil {
+			return nil, err
 		}
 	}
-
-	return numberOfDays
-}
-
-// CalculateTotal count the difference between start and end in a list and add it all together
-func CalculateTotal(items []models.Event) int {
-	var total int = 0
-
-	for _, i := range items {
-		var diff = i.End.Sub(i.Start)
-		total += int(diff.Minutes())
-	}
-
-	return total
-}
-
-// IsDayExcluded check if any in a list of events are excluded
-func IsDayExcluded(events []models.Event) bool {
-	var excluded = false
-
-	for _, i := range events {
-		if i.Excluded {
-			excluded = true
-		}
-	}
-
-	return excluded
+	return os.OpenFile(filename, os.O_RDWR, 0600)
 }

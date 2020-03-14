@@ -2,10 +2,10 @@ package utils
 
 import (
 	"errors"
+	"os"
 	"testing"
 	"time"
 
-	"github.com/hjertnes/timesheet/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,7 +34,26 @@ func TestTimeFromDateString(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestTimeFromDateStringAnTimeString2(t *testing.T) {
+
+	var d, err = TimeFromDateStringAndTimeString2("2010-01-01", "08:00:00")
+
+	assert.Nil(t, err)
+	assert.Equal(t, d.Year(), 2010)
+	assert.Equal(t, int(d.Month()), 1)
+	assert.Equal(t, d.Day(), 1)
+	assert.Equal(t, d.Hour(), 8)
+	assert.Equal(t, d.Minute(), 0)
+	assert.Equal(t, d.Second(), 0)
+
+	_, err = TimeFromDateStringAndTimeString2("abc", "bc")
+	assert.NotNil(t, err)
+	_, err = TimeFromDateStringAndTimeString2("2010-01-01", "bc")
+	assert.NotNil(t, err)
+}
+
 func TestTimeFromDateStringAnTimeString(t *testing.T) {
+
 	var d, err = TimeFromDateStringAndTimeString("2010-01-01", "08:00")
 
 	assert.Nil(t, err)
@@ -73,74 +92,10 @@ func unwrap(e time.Time, err error) time.Time {
 	return e
 }
 
-func TestBuildListOf(t *testing.T) {
-	var events = []models.Event{
-		{Start: unwrap(TimeFromDateString("2010-01-01"))},
-		{Start: unwrap(TimeFromDateString("2010-01-01"))},
-		{Start: unwrap(TimeFromDateString("2010-01-02"))},
-		{Start: unwrap(TimeFromDateString("2010-01-02"))},
-		{Start: unwrap(TimeFromDateString("2010-01-03"))},
-	}
-
-	var days = BuildListOf("2006-01-02", events)
-
-	assert.Len(t, days, 3)
-	days = BuildListOf("2006", events)
-	assert.Len(t, days, 1)
+func TestExist(t *testing.T) {
+	assert.False(t, exist("/tmp/file"))
+	f, _ := OpenOrCreate("/tmp/file")
+	_ = f.Close()
+	assert.True(t, exist("/tmp/file"))
+	os.Remove("/tmp/file")
 }
-
-func TestFilterEventsFrom(t *testing.T) {
-	var events = []models.Event{
-		{Start: unwrap(TimeFromDateString("2010-01-01"))},
-		{Start: unwrap(TimeFromDateString("2010-01-01"))},
-		{Start: unwrap(TimeFromDateString("2010-01-02"))},
-		{Start: unwrap(TimeFromDateString("2010-01-02"))},
-		{Start: unwrap(TimeFromDateString("2010-01-03"))},
-	}
-
-	var days = FilterEventsFrom("2006", events, "2010")
-
-	assert.Len(t, days, 5)
-	days = FilterEventsFrom("2006-01-02", events, "2010-01-03")
-	assert.Len(t, days, 1)
-}
-
-func TestCountDaysNotExcluded(t *testing.T) {
-	var events = []models.Event{
-		{Start: unwrap(TimeFromDateString("2010-01-01")), Excluded: true},
-		{Start: unwrap(TimeFromDateString("2010-01-02")), Excluded: false},
-		{Start: unwrap(TimeFromDateString("2010-01-03")), Excluded: false},
-		{Start: unwrap(TimeFromDateString("2010-01-04")), Excluded: false},
-		{Start: unwrap(TimeFromDateString("2010-01-05")), Excluded: true},
-	}
-
-	var days = CountDaysNotExcluded(events)
-
-	assert.Equal(t, days, 3)
-}
-
-func TestCalculateTotal(t *testing.T) {
-	var events = []models.Event{
-		{
-			Start: unwrap(TimeFromDateStringAndTimeString("2010-01-01", "08:00")),
-			End:   unwrap(TimeFromDateStringAndTimeString("2010-01-01", "10:00")),
-		},
-		{
-			Start: unwrap(TimeFromDateStringAndTimeString("2010-01-02", "08:00")),
-			End:   unwrap(TimeFromDateStringAndTimeString("2010-01-02", "10:00")),
-		},
-		{
-			Start: unwrap(TimeFromDateStringAndTimeString("2010-01-03", "08:00")),
-			End:   unwrap(TimeFromDateStringAndTimeString("2010-01-03", "10:00")),
-		},
-	}
-
-	var days = CalculateTotal(events)
-
-	assert.Equal(t, days, 360)
-}
-
-/*
-
-
- */

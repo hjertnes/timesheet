@@ -8,6 +8,7 @@ import (
 )
 
 func Test(t *testing.T) {
+	New()
 	var r = &read{}
 
 	var f, _ = os.Create("./test")

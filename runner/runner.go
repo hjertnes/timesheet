@@ -2,20 +2,16 @@
 package runner
 
 import (
-	"encoding/json"
+	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/hjertnes/timesheet/backupmodels"
 	"github.com/hjertnes/timesheet/models"
 	"github.com/hjertnes/timesheet/read"
-	EventRepository "github.com/hjertnes/timesheet/repositories/event"
-	SettingsRepository "github.com/hjertnes/timesheet/repositories/settings"
 	"github.com/hjertnes/timesheet/utils"
 	"github.com/olekukonko/tablewriter"
 )
@@ -27,39 +23,37 @@ type Runner interface {
 	List()
 	Add(start time.Time, end time.Time, excluded bool)
 	Off(date time.Time)
-	Delete(id int)
 	Setup()
-	Backup(filename string)
-	Restore(filename string)
 	SummaryYear()
 	SummaryDay()
 }
 
 type runner struct {
-	eventRepository    EventRepository.Repository
-	settingsRepository SettingsRepository.Repository
-	reader             read.Read
+	document *models.Document
+	//eventRepository    EventRepository.Repository
+	//settingsRepository SettingsRepository.Repository
+	reader read.Read
 }
 
 // New constructor
-func New(e EventRepository.Repository, s SettingsRepository.Repository, r read.Read) Runner {
+func New(d *models.Document, r read.Read) Runner {
 	return &runner{
-		eventRepository:    e,
-		settingsRepository: s,
-		reader:             r,
+		reader:   r,
+		document: d,
 	}
 }
 
 func (r *runner) settingToInt(name string) int {
 	var err error
 
-	var setting *models.Setting
-
 	var result int
 
-	setting, err = r.settingsRepository.GetOne(name)
+	setting, ok := r.document.Configuration[name]
+	if !ok {
+		err = errors.New("Key not found")
+	}
 	utils.ErrorHandler(err)
-	result, err = strconv.Atoi(setting.Value)
+	result, err = strconv.Atoi(setting)
 
 	utils.ErrorHandler(err)
 
@@ -72,16 +66,16 @@ func (r *runner) getSettings() (int, int) {
 
 // SettingsList prints a table of settings
 func (r *runner) SettingsList() {
-	var items, err = r.settingsRepository.GetAll()
+	//	var items, err = r.settingsRepository.GetAll()
 
-	utils.ErrorHandler(err)
+	//	utils.ErrorHandler(err)
 
 	table := tablewriter.NewWriter(os.Stdout)
 
 	table.SetHeader([]string{"Key", "Value"})
 
-	for _, v := range items {
-		table.Append([]string{v.Key, v.Value})
+	for key, v := range r.document.Configuration {
+		table.Append([]string{key, v})
 	}
 
 	table.Render()
@@ -89,29 +83,34 @@ func (r *runner) SettingsList() {
 
 // SettingsSet adds or updates a setting
 func (r *runner) SettingsSet(key string, value string) {
-	var err = r.settingsRepository.AddOrUpdate(key, value)
-
-	utils.ErrorHandler(err)
+	r.document.Configuration[key] = value
 }
 
 // List lists events
 func (r *runner) List() {
-	var items, err = r.eventRepository.GetAll()
-
-	utils.ErrorHandler(err)
-
 	table := tablewriter.NewWriter(os.Stdout)
 
-	table.SetHeader([]string{"Id", "Start", "End", "Off", "Excluded"})
+	table.SetHeader([]string{"Start", "End", "Off", "Excluded"})
 
-	for _, v := range items {
-		table.Append([]string{
-			strconv.FormatUint(v.ID, 10),
-			v.Start.String(),
-			v.End.String(),
-			strconv.FormatBool(v.Off),
-			strconv.FormatBool(v.Excluded),
-		})
+	for _, yearValue := range r.document.Items {
+		for day, dayItem := range yearValue {
+			for _, item := range dayItem.Events {
+				table.Append([]string{
+					fmt.Sprint(day, " ", item.Start),
+					fmt.Sprint(day, " ", item.End),
+					strconv.FormatBool(false),
+					strconv.FormatBool(dayItem.Excluded),
+				})
+			}
+			if len(dayItem.Events) == 0 {
+				table.Append([]string{
+					fmt.Sprint(day),
+					fmt.Sprint(day),
+					strconv.FormatBool(true),
+					strconv.FormatBool(dayItem.Excluded),
+				})
+			}
+		}
 	}
 
 	table.Render()
@@ -119,23 +118,12 @@ func (r *runner) List() {
 
 //Add add event
 func (r *runner) Add(start time.Time, end time.Time, excluded bool) {
-	var err = r.eventRepository.Add(start, end, excluded, false)
-
-	utils.ErrorHandler(err)
+	r.document.Add(start, end, excluded, false)
 }
 
 // Off add a day as "off"
 func (r *runner) Off(date time.Time) {
-	var err = r.eventRepository.Add(date, date, false, true)
-
-	utils.ErrorHandler(err)
-}
-
-// Delete event
-func (r *runner) Delete(id int) {
-	var err = r.eventRepository.Delete(id)
-
-	utils.ErrorHandler(err)
+	r.document.Add(date, date, false, true)
 }
 
 // Setup settings
@@ -150,111 +138,62 @@ func (r *runner) Setup() {
 
 	var breakInMinutes = r.reader.Execute(os.Stdin)
 
-	err := r.settingsRepository.AddOrUpdate("workday", strings.Trim(workDayMinutes, "\n"))
-	utils.ErrorHandler(err)
-	err = r.settingsRepository.AddOrUpdate("break", strings.Trim(breakInMinutes, "\n"))
-	utils.ErrorHandler(err)
-}
-
-// Backup to file
-func (r *runner) Backup(filename string) {
-	var allSettings, _ = r.settingsRepository.GetAll()
-
-	var allEvents, _ = r.eventRepository.GetAll()
-
-	var settings = make([]backupmodels.Setting, 0)
-
-	var events = make([]backupmodels.Event, 0)
-
-	for _, setting := range allSettings {
-		settings = append(
-			settings,
-			backupmodels.Setting{
-				Key:   setting.Key,
-				Value: setting.Value,
-			},
-		)
-	}
-
-	for _, event := range allEvents {
-		events = append(
-			events,
-			backupmodels.Event{
-				Start:    event.Start,
-				End:      event.End,
-				Excluded: event.Excluded,
-				Off:      event.Off,
-			},
-		)
-	}
-
-	var document = backupmodels.Document{
-		Settings: settings,
-		Events:   events,
-	}
-
-	file, _ := json.MarshalIndent(document, "", " ")
-
-	var err = ioutil.WriteFile(filename, file, 0644)
-
-	utils.ErrorHandler(err)
-}
-
-// Restore from backup
-func (r *runner) Restore(filename string) {
-	var obj backupmodels.Document
-
-	data, err := ioutil.ReadFile(filename) //nolint
-
-	utils.ErrorHandler(err)
-	err = json.Unmarshal(data, &obj)
-	utils.ErrorHandler(err)
-	err = r.eventRepository.DeleteAll()
-	utils.ErrorHandler(err)
-	err = r.settingsRepository.DeleteAll()
-	utils.ErrorHandler(err)
-
-	for _, e := range obj.Events {
-		err = r.eventRepository.Add(e.Start, e.End, e.Excluded, e.Off)
-		utils.ErrorHandler(err)
-	}
-
-	for _, e := range obj.Settings {
-		err = r.settingsRepository.AddOrUpdate(e.Key, e.Value)
-		utils.ErrorHandler(err)
-	}
+	r.document.Configuration["workday"] = strings.Trim(workDayMinutes, "\n")
+	r.document.Configuration["break"] = strings.Trim(breakInMinutes, "\n")
 }
 
 // SummaryYear show summary per year with difference between expected hours and actual hours
 func (r *runner) SummaryYear() {
 	var workday, breaktime = r.getSettings()
 
-	var items, err = r.eventRepository.GetAll()
+	fmt.Println(workday)
+	fmt.Println(breaktime)
 
-	utils.ErrorHandler(err)
+	//var items, err = r.eventRepository.GetAll()
 
-	var years = utils.BuildListOf("2006", items)
+	//utils.ErrorHandler(err)
+
+	//var years = utils.BuildListOf("2006", items)
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Year", "Expected", "Total", "Difference"})
 
 	var data = make([][]string, 0)
 
-	for _, e := range years {
-		events := utils.FilterEventsFrom("2006", items, e)
+	for year, yearValue := range r.document.Items {
+		var numberOfDays int = 0
+		var expected int = 0
+		var total int = 0
 
-		var numberOfDays int = utils.CountDaysNotExcluded(events)
+		for day, dayItem := range yearValue {
+			if !dayItem.Excluded {
+				numberOfDays++
+			}
+			for _, item := range dayItem.Events {
+				s, err := utils.TimeFromDateStringAndTimeString2(day, item.Start)
+				utils.ErrorHandler(err)
+				e, err := utils.TimeFromDateStringAndTimeString2(day, item.End)
+				utils.ErrorHandler(err)
 
-		var expected int = numberOfDays * workday
+				var diff = e.Sub(s)
+				total += int(diff.Minutes())
+			}
 
-		var total int = utils.CalculateTotal(events)
+		}
+
+		expected = numberOfDays * workday
 
 		total -= (numberOfDays * breaktime)
 
 		var diff int = total - expected
 
+		fmt.Println(year)
+		fmt.Println(expected)
+		fmt.Println(total)
+		fmt.Println(diff)
+
 		data = append(data, []string{
-			e,
+			year,
 			utils.IntOfMinutesToString(expected),
 			utils.IntOfMinutesToString(total),
 			utils.IntOfMinutesToString(diff),
@@ -276,9 +215,9 @@ func (r *runner) SummaryYear() {
 func (r *runner) SummaryDay() {
 	var _, breaktime = r.getSettings()
 
-	var items, err = r.eventRepository.GetAll()
+	//var items, err = r.eventRepository.GetAll()
 
-	utils.ErrorHandler(err)
+	//utils.ErrorHandler(err)
 
 	table := tablewriter.NewWriter(os.Stdout)
 
@@ -286,21 +225,27 @@ func (r *runner) SummaryDay() {
 
 	var data = make([][]string, 0)
 
-	var days = utils.BuildListOf("2006-01-02", items)
+	//var days = utils.BuildListOf("2006-01-02", items)
 
-	for _, day := range days {
-		var events = utils.FilterEventsFrom("2006-01-02", items, day)
+	for _, yearValue := range r.document.Items {
+		for day, dayItem := range yearValue {
+			var total int = 0
+			for _, item := range dayItem.Events {
+				s, err := utils.TimeFromDateStringAndTimeString2(day, item.Start)
+				utils.ErrorHandler(err)
+				e, err := utils.TimeFromDateStringAndTimeString2(day, item.End)
+				utils.ErrorHandler(err)
 
-		var excluded = utils.IsDayExcluded(events)
+				var diff = e.Sub(s)
+				total += int(diff.Minutes())
+			}
+			if !dayItem.Excluded {
+				total -= breaktime
+			}
+			if total > 0 {
+				data = append(data, []string{day, utils.IntOfMinutesToString(total)})
+			}
 
-		var total = utils.CalculateTotal(events)
-
-		if !excluded {
-			total -= breaktime
-		}
-
-		if total > 0 {
-			data = append(data, []string{day, utils.IntOfMinutesToString(total)})
 		}
 	}
 
