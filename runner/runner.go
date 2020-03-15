@@ -30,9 +30,7 @@ type Runner interface {
 
 type runner struct {
 	document *models.Document
-	//eventRepository    EventRepository.Repository
-	//settingsRepository SettingsRepository.Repository
-	reader read.Read
+	reader   read.Read
 }
 
 // New constructor
@@ -66,10 +64,6 @@ func (r *runner) getSettings() (int, int) {
 
 // SettingsList prints a table of settings
 func (r *runner) SettingsList() {
-	//	var items, err = r.settingsRepository.GetAll()
-
-	//	utils.ErrorHandler(err)
-
 	table := tablewriter.NewWriter(os.Stdout)
 
 	table.SetHeader([]string{"Key", "Value"})
@@ -146,15 +140,6 @@ func (r *runner) Setup() {
 func (r *runner) SummaryYear() {
 	var workday, breaktime = r.getSettings()
 
-	fmt.Println(workday)
-	fmt.Println(breaktime)
-
-	//var items, err = r.eventRepository.GetAll()
-
-	//utils.ErrorHandler(err)
-
-	//var years = utils.BuildListOf("2006", items)
-
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Year", "Expected", "Total", "Difference"})
 
@@ -187,11 +172,6 @@ func (r *runner) SummaryYear() {
 
 		var diff int = total - expected
 
-		fmt.Println(year)
-		fmt.Println(expected)
-		fmt.Println(total)
-		fmt.Println(diff)
-
 		data = append(data, []string{
 			year,
 			utils.IntOfMinutesToString(expected),
@@ -215,17 +195,11 @@ func (r *runner) SummaryYear() {
 func (r *runner) SummaryDay() {
 	var _, breaktime = r.getSettings()
 
-	//var items, err = r.eventRepository.GetAll()
-
-	//utils.ErrorHandler(err)
-
 	table := tablewriter.NewWriter(os.Stdout)
 
 	table.SetHeader([]string{"Date", "Hours"})
 
 	var data = make([][]string, 0)
-
-	//var days = utils.BuildListOf("2006-01-02", items)
 
 	for _, yearValue := range r.document.Items {
 		for day, dayItem := range yearValue {
