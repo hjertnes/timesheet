@@ -12,9 +12,21 @@ import (
 )
 
 func main() {
-	var home = os.Getenv("HOME")
+	home := os.Getenv("HOME")
+	filename := fmt.Sprintf("%s/txt/timesheet.yaml", home)
 
-	repo := models.New(fmt.Sprintf("%s/txt/timesheet.yaml", home))
+	if _, err := os.Stat(filename); err != nil && os.IsNotExist(err) {
+		repo := models.New(filename)
+		d := &models.Document{
+			Configuration: map[string]string{},
+		}
+		d.Configuration["workday"] = "0"
+		d.Configuration["break"] = "0"
+		err = repo.Save(d)
+		utils.ErrorHandler(err)
+	}
+
+	repo := models.New(filename)
 	d, err := repo.Load()
 	utils.ErrorHandler(err)
 
