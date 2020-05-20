@@ -20,8 +20,8 @@ func main() {
 		d := &models.Document{
 			Configuration: map[string]string{},
 		}
-		d.Configuration["workday"] = "0"
-		d.Configuration["break"] = "0"
+		d.Configuration["workday"] = "450"
+		d.Configuration["break"] = "30"
 		err = repo.Save(d)
 		utils.ErrorHandler(err)
 	}
