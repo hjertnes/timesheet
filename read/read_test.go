@@ -1,7 +1,7 @@
 package read
 
 import (
-	"github.com/hjertnes/timesheet/utils"
+	"git.sr.ht/~hjertnes/timesheet/utils"
 
 	"os"
 	"testing"

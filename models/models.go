@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/hjertnes/timesheet/utils"
+	"git.sr.ht/~hjertnes/timesheet/utils"
 	"gopkg.in/yaml.v2"
 )
 

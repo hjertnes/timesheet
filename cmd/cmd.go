@@ -4,8 +4,8 @@ package cmd
 import (
 	"time"
 
-	"github.com/hjertnes/timesheet/runner"
-	"github.com/hjertnes/timesheet/utils"
+	"git.sr.ht/~hjertnes/timesheet/runner"
+	"git.sr.ht/~hjertnes/timesheet/utils"
 
 	"github.com/spf13/cobra"
 )

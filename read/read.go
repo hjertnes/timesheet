@@ -5,7 +5,7 @@ import (
 	"bufio"
 	"os"
 
-	"github.com/hjertnes/timesheet/utils"
+	"git.sr.ht/~hjertnes/timesheet/utils"
 )
 
 // Read Interface for reading files usually stdin

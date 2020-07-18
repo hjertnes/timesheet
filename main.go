@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/hjertnes/timesheet/cmd"
-	"github.com/hjertnes/timesheet/models"
-	"github.com/hjertnes/timesheet/read"
-	"github.com/hjertnes/timesheet/runner"
-	"github.com/hjertnes/timesheet/utils"
+	"git.sr.ht/~hjertnes/timesheet/cmd"
+	"git.sr.ht/~hjertnes/timesheet/models"
+	"git.sr.ht/~hjertnes/timesheet/read"
+	"git.sr.ht/~hjertnes/timesheet/runner"
+	"git.sr.ht/~hjertnes/timesheet/utils"
 )
 
 func main() {

@@ -1,4 +1,4 @@
-module github.com/hjertnes/timesheet
+module git.sr.ht/~hjertnes/timesheet
 
 go 1.13
 

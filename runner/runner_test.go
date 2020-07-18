@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hjertnes/timesheet/models"
+	"git.sr.ht/~hjertnes/timesheet/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
