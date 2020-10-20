@@ -18,10 +18,13 @@ func main() {
 	if _, err := os.Stat(filename); err != nil && os.IsNotExist(err) {
 		repo := models.New(filename)
 		d := &models.Document{
-			Configuration: map[string]string{},
+			Configuration: map[string]string{
+				"workday": "450",
+				"break": "30",
+			},
+			Items: map[string]map[string]models.DayItem{},
 		}
-		d.Configuration["workday"] = "450"
-		d.Configuration["break"] = "30"
+
 		err = repo.Save(d)
 		utils.ErrorHandler(err)
 	}
