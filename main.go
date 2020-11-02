@@ -32,6 +32,9 @@ func main() {
 	repo := models.New(filename)
 	d, err := repo.Load()
 	utils.ErrorHandler(err)
+	if d.Items == nil {
+		d.Items = make(map[string]map[string]models.DayItem)
+	}
 
 	var rr = read.New()
 
